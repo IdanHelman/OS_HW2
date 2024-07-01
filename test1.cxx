@@ -6,6 +6,7 @@
 using namespace std;
 
 void test_init() {
+	//cout << "test init weight is " << get_weight() <<endl;
 	assert(get_weight() == 0);
 }
 
@@ -55,6 +56,7 @@ void test_get_path_sum(){
 }
 
 int main() {
+	TEST(test_init);
     int x = get_weight();
 	cout << "weight: " << x << endl;
 	assert(x == 0);
@@ -66,7 +68,6 @@ int main() {
 	assert(x == 5);
     cout << "===== SUCCESS =====" << endl;
 
-	TEST(test_init);
 	TEST(test_set_get);
 	TEST(test_set_get_fork);
     return 0;
