@@ -98,18 +98,20 @@ void test_illegal_pid() {
 }
 
 // tests for get_heaviest_sibling
-void test_heaviest_sibling_fork() {
+void test_heaviest_sibling_fork1() {
     set_weight(1);
     for (int i = 0; i < 10; ++i) {
         pid_t pid = fork();
         if (pid == 0) {
-            set_weight(i);
-            cout << "idx: " << i << " heaviest: " << get_heaviest_sibling() << " pid: " << getpid() << endl;
             sleep(10);
             exit(0);
         }
     }
-	while(wait(NULL) == -1);
+    if (fork() == 0) {
+        set_weight(10);
+        assert(get_heaviest_sibling() == getpid());
+    }
+    while (wait(NULL) == -1);
 }
 
 void test_heaviest_sibling_fork3(){
@@ -173,6 +175,25 @@ void test_heaviest_sibling_fork3(){
 	for(int curpid : child_pids){
 		kill(SIGKILL, curpid);
 	}
+void test_heaviest_sibling_fork2() {
+    set_weight(1);
+    int first_sib = fork();
+    if (first_sib == 0) {
+        set_weight(11);
+        sleep(10);
+        exit(0);
+    }
+    for (int i = 1; i < 10; ++i) {
+        if (fork() == 0) {
+            set_weight(10-i);
+            sleep(10);
+            exit(0);
+        }
+    }
+    if (fork() == 0) {
+        assert(get_heaviest_sibling() == first_sib);
+    }
+    while (wait(NULL) == -1);
 }
 
 int main() {
@@ -184,14 +205,12 @@ int main() {
     x = get_weight();
 	assert(x == 5);
     cout << "===== SUCCESS =====" << endl;
+<<<<<<< HEAD
 	//TEST(test_set_get);
     //TEST(test_illegal_weight);
-	//TEST(test_set_get_fork);
-    //TEST(test_child_process);
-    //TEST(test_get_path_sum);
-    //TEST(test_illegal_pid);
-    //TEST(test_heaviest_sibling_fork);
-	TEST(test_heaviest_sibling_fork3);
+    TEST(test_get_path_sum);
+    TEST(test_heaviest_sibling_fork1);
+    TEST(test_heaviest_sibling_fork2);
+>>>>>>> 5d1aeb3a2fec2a81d5111491de6831694093ae31
     return 0;
 }
-
