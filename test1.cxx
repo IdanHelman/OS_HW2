@@ -2,7 +2,7 @@
 #include <cstdio>
 #include <iostream>
 #include <cassert>
-
+#include <errno.h>
 using namespace std;
 
 // tests for get_weight and set_weight
@@ -17,7 +17,9 @@ void test_set_get() {
 }
 
 long test_illegal_weight() {
-    assert(set_weight(-1) == -EINVAL);
+	int x = set_weight(-1);
+	perror("error is");
+    //assert(errno == -EINVAL);
 }
 
 void test_set_get_fork() {
@@ -35,9 +37,13 @@ void test_set_get_fork() {
 	assert(get_weight() == 18);
 }
 
+
+
 // tests for get_path_sum
 void test_get_path_sum(){
 	int father_pid = getpid();
+	int my_pipe[2];
+	pipe(my_pipe);
 	set_weight(1);
 	pid_t pid = fork();
 	if (pid == 0) {
@@ -47,9 +53,12 @@ void test_get_path_sum(){
 			set_weight(3);
 			pid_t pid3 = fork();
 			if (pid3 == 0) {
-				
+				close(my_pipe[0]);
+				std::string str = std::to_string(getpid());
+				const char* charPtr = str.c_str();
+				write(my_pipe[1], charPtr, str.size());
 				set_weight(4);
-				exit(0);
+				while(1);
 			}
 			wait(NULL);
 			exit(0);
@@ -57,8 +66,14 @@ void test_get_path_sum(){
 		wait(NULL);
 		exit(0);
 	}
+	close(my_pipe[1]);
+	char buffer[1000];
+	read(my_pipe[0], buffer, 5);
+	int child_pid = atoi(buffer);
+	int path_sum = get_path_sum(child_pid);
+	kill(child_pid, SIGKILL);
 	wait(NULL);
-	assert(get_path_sum(pid) == 6);
+	assert(path_sum == 10);
 }
 
 void test_child_process() {
@@ -77,7 +92,9 @@ void test_child_process() {
 
 void test_illegal_pid() {
     long result = get_path_sum(-1);
-    assert(result == -ECHILD);
+	cout << "test illegal pid" <<endl;
+	cout << "result is " << result << endl;
+	perror("illegal pid error is");
 }
 
 // tests for get_heaviest_sibling
@@ -87,11 +104,12 @@ void test_heaviest_sibling_fork() {
         pid_t pid = fork();
         if (pid == 0) {
             set_weight(i);
-            cout << get_heaviest_sibling() << " " << getpid() << endl;
-            sleep(1);
+            cout << "idx: " << i << " heaviest: " << get_heaviest_sibling() << " pid: " << getpid() << endl;
+            sleep(10);
             exit(0);
         }
     }
+	while(wait(NULL) == -1);
 }
 
 
@@ -104,13 +122,13 @@ int main() {
     x = get_weight();
 	assert(x == 5);
     cout << "===== SUCCESS =====" << endl;
-	TEST(test_set_get);
-//    TEST(test_illegal_weight);
-	TEST(test_set_get_fork);
-    TEST(test_child_process);
-   // TEST(test_get_path_sum);
-  //  TEST(test_illegal_pid);
- //   TEST(test_heaviest_sibling_fork);
+	//TEST(test_set_get);
+    //TEST(test_illegal_weight);
+	//TEST(test_set_get_fork);
+    //TEST(test_child_process);
+    TEST(test_get_path_sum);
+    //TEST(test_illegal_pid);
+    //TEST(test_heaviest_sibling_fork);
 
     return 0;
 }

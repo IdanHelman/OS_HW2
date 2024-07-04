@@ -41,7 +41,7 @@ asmlinkage long sys_get_path_sum(pid_t target){
 }
 
 asmlinkage long sys_get_heaviest_sibling(void){
-    long maxWeight = 0;
+    long maxWeight = current->weight;
     long heaviest = current->pid;
     struct task_struct *temp;
 
