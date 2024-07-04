@@ -3,6 +3,7 @@
 #include <iostream>
 #include <cassert>
 #include <errno.h>
+#include <vector>
 using namespace std;
 
 // tests for get_weight and set_weight
@@ -37,8 +38,6 @@ void test_set_get_fork() {
 	assert(get_weight() == 18);
 }
 
-
-
 // tests for get_path_sum
 void test_get_path_sum(){
 	int father_pid = getpid();
@@ -69,6 +68,7 @@ void test_get_path_sum(){
 	close(my_pipe[1]);
 	char buffer[1000];
 	read(my_pipe[0], buffer, 5);
+	close(my_pipe[0]);
 	int child_pid = atoi(buffer);
 	int path_sum = get_path_sum(child_pid);
 	kill(child_pid, SIGKILL);
@@ -112,6 +112,68 @@ void test_heaviest_sibling_fork() {
 	while(wait(NULL) == -1);
 }
 
+void test_heaviest_sibling_fork3(){
+	vector<int> child_pids;
+	char buffer[1000];
+	int my_pipe[2];
+	pipe(my_pipe);
+
+	//child 1
+	pid_t pid = fork();
+    if (pid == 0) {
+        set_weight(5);
+        cout << "heaviest: " << get_heaviest_sibling() << " pid: " << getpid() << " my weight " << get_weight() << endl;
+		write(my_pipe[1], "a", 1);
+        while(1);
+        exit(0);
+    }
+	read(my_pipe[0], buffer, 2);
+	child_pids.push_back(pid);
+
+	//child 2
+	pid = fork();
+    if (pid == 0) {
+        set_weight(10);
+        cout << "heaviest: " << get_heaviest_sibling() << " pid: " << getpid() << " my weight " << get_weight() << endl;
+		write(my_pipe[1], "a", 1);
+        while(1);
+        exit(0);
+    }
+	read(my_pipe[0], buffer, 2);
+	child_pids.push_back(pid);
+	
+	//child 3
+	pid = fork();
+    if (pid == 0) {
+        set_weight(7);
+        cout << "heaviest: " << get_heaviest_sibling() << " pid: " << getpid() << " my weight " << get_weight() << endl;
+		write(my_pipe[1], "a", 1);
+        while(1);
+        exit(0);
+    }
+	read(my_pipe[0], buffer, 2);
+	child_pids.push_back(pid);
+	
+	cout << "killing " << child_pids[1] << endl;
+	kill(child_pids[1], SIGKILL);
+	waitpid(child_pids[1], nullptr, 0);
+	child_pids.erase(child_pids.begin() + 1);
+	//child 4
+	pid = fork();
+    if (pid == 0) {
+        set_weight(3);
+        cout << "heaviest: " << get_heaviest_sibling() << " pid: " << getpid() << " my weight " << get_weight() << endl;
+		write(my_pipe[1], "a", 1);
+        while(1);
+        exit(0);
+    }
+	read(my_pipe[0], buffer, 2);
+	child_pids.push_back(pid);
+
+	for(int curpid : child_pids){
+		kill(SIGKILL, curpid);
+	}
+}
 
 int main() {
 	TEST(test_init);
@@ -126,10 +188,10 @@ int main() {
     //TEST(test_illegal_weight);
 	//TEST(test_set_get_fork);
     //TEST(test_child_process);
-    TEST(test_get_path_sum);
+    //TEST(test_get_path_sum);
     //TEST(test_illegal_pid);
     //TEST(test_heaviest_sibling_fork);
-
+	TEST(test_heaviest_sibling_fork3);
     return 0;
 }
 
