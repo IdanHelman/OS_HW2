@@ -73,21 +73,44 @@ void test_get_path_sum(){
 	int path_sum = get_path_sum(child_pid);
 	kill(child_pid, SIGKILL);
 	wait(NULL);
-	cout << "path_sum is " << path_sum <<endl;
-	//assert(path_sum == 10);
+	//cout << "path_sum is " << path_sum <<endl;
+	assert(path_sum == 10);
 }
 
 void test_child_process() {
     set_weight(5);
+    long result = get_path_sum(getpid());
+    assert(result == 5);
     pid_t child_pid = fork();
     if (child_pid == 0) {
         sleep(1);
         exit(0);
     } else if (child_pid > 0) {
-        long result = get_path_sum(child_pid);
+        result = get_path_sum(child_pid);
         assert(result == 10);
     } else {
         perror("fork failed");
+    }
+}
+
+void test_get_path_error(){
+    get_path_sum(100000);
+    assert(errno == ECHILD);
+
+    set_weight(-1);
+    assert(errno == EINVAL);
+
+    get_path_sum(0);
+    assert(errno == ECHILD);
+
+    set_weight(-1);
+    assert(errno == EINVAL);
+
+    pid_t pid = getpid();
+    if(fork() == 0){
+        get_path_sum(pid);
+        assert(errno == ECHILD);
+        exit(0);
     }
 }
 
@@ -208,11 +231,12 @@ int main() {
     x = get_weight();
 	assert(x == 5);
     cout << "===== SUCCESS =====" << endl;
-	//TEST(test_set_get);
-    //TEST(test_illegal_weight);
+	TEST(test_set_get);
     TEST(test_get_path_sum);
+    TEST(test_child_process);
+    TEST(test_get_path_error);
     //TEST(test_heaviest_sibling_fork1);
     //TEST(test_heaviest_sibling_fork2);
-	TEST(test_heaviest_sibling_fork3);
+	//TEST(test_heaviest_sibling_fork3);
     return 0;
 }
